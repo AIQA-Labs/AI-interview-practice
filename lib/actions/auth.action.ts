@@ -79,6 +79,7 @@ export async function signIn(params: SignInParams) {
       };
 
     await setSessionCookie(idToken);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
     console.log("");
 
@@ -129,4 +130,4 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function isAuthenticated() {
   const user = await getCurrentUser();
   return !!user;
-}
+};
