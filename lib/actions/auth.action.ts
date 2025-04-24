@@ -25,38 +25,79 @@ export async function setSessionCookie(idToken: string) {
   });
 }
 
+// Add this to your existing signUp function to handle Google sign-in
 export async function signUp(params: SignUpParams) {
-  const { uid, name, email } = params;
+  const { uid, name, email, password } = params;
 
   try {
     // check if user exists in db
     const userRecord = await db.collection("users").doc(uid).get();
-    if (userRecord.exists)
+    if (userRecord.exists) {
+      // For Google sign-in, we should allow existing users to sign in
+      if (!password) {
+        return {
+          success: true,
+          message: "Google account already exists. Proceeding with sign-in.",
+        };
+      }
       return {
         success: false,
         message: "User already exists. Please sign in.",
       };
+    }
 
-    // save user to db
-    await db.collection("users").doc(uid).set({
-      name,
-      email,
-      // profileURL,
-      // resumeURL,
-    });
+    // For Google users, get their profile photo
+    let photoURL = "/user-avatar.jpg"; // Default avatar
+
+    if (!password) {
+      try {
+        // Get the user from Firebase Auth
+        const authUser = await auth.getUser(uid);
+        if (authUser.photoURL) {
+          photoURL = authUser.photoURL;
+        }
+      } catch (photoError) {
+        console.error("Error getting user photo:", photoError);
+        // Continue with default photo if there's an error
+      }
+    }
+
+    // save user to db with only the necessary fields
+    await db
+      .collection("users")
+      .doc(uid)
+      .set({
+        name,
+        email,
+        createdAt: new Date().toISOString(),
+        // If the user signed up with Google, store that information
+        authProvider: password ? "email" : "google",
+        // Use the Google profile photo if available, otherwise use default
+        photoURL: photoURL,
+      });
 
     return {
       success: true,
-      message: "Account created successfully. Please sign in.",
+      message: password
+        ? "Account created successfully. Please sign in."
+        : "Google account created successfully.",
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating user:", error);
 
     // Handle Firebase specific errors
-    if (error.code === "auth/email-already-exists") {
+    if ((error as { code?: string }).code === "auth/email-already-exists") {
       return {
         success: false,
         message: "This email is already in use",
+      };
+    }
+
+    // More specific error handling for decoder errors
+    if (error instanceof Error && error.message.includes("DECODER routines")) {
+      return {
+        success: false,
+        message: "Database connection error. Please try again later.",
       };
     }
 
@@ -78,10 +119,30 @@ export async function signIn(params: SignInParams) {
         message: "User does not exist. Create an account.",
       };
 
+    // Get user from Firestore to check auth provider
+    const firestoreUser = await db
+      .collection("users")
+      .doc(userRecord.uid)
+      .get();
+    const userData = firestoreUser.data();
+    const isGoogleUser = userData?.authProvider === "google";
+
+    // Skip email verification check for Google users as they're already verified
+    if (!userRecord.emailVerified && !isGoogleUser) {
+      return {
+        success: false,
+        message: "Please verify your email before signing in.",
+      };
+    }
+
     await setSessionCookie(idToken);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error: any) {
-    console.log("");
+
+    return {
+      success: true,
+      message: "Signed in successfully.",
+    };
+  } catch (error: unknown) {
+    console.log(error);
 
     return {
       success: false,
@@ -98,6 +159,7 @@ export async function signOut() {
 }
 
 // Get current user from session cookie
+// Update getCurrentUser to check email verification
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
 
@@ -113,6 +175,19 @@ export async function getCurrentUser(): Promise<User | null> {
       .doc(decodedClaims.uid)
       .get();
     if (!userRecord.exists) return null;
+
+    const userData = userRecord.data();
+    const isGoogleUser = userData?.authProvider === "google";
+
+    // Get the user from Auth to check email verification
+    const authUser = await auth.getUser(decodedClaims.uid);
+
+    // Skip email verification check for Google users
+    if (!authUser.emailVerified && !isGoogleUser) {
+      // Clear the session cookie
+      cookieStore.delete("session");
+      return null;
+    }
 
     return {
       ...userRecord.data(),
@@ -130,4 +205,27 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function isAuthenticated() {
   const user = await getCurrentUser();
   return !!user;
-};
+}
+
+// Add this function to your existing auth.action.ts file
+
+export async function updateUserAvatar({
+  userId,
+  photoURL,
+}: {
+  userId: string;
+  photoURL: string;
+}) {
+  try {
+    const userRef = db.collection("users").doc(userId);
+
+    await userRef.update({
+      photoURL,
+    });
+
+    return { success: true, message: "Your avatar was updated successfully!" };
+  } catch (error) {
+    console.error("Error updating user avatar:", error);
+    return { success: false, error };
+  }
+}

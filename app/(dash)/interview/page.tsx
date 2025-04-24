@@ -14,11 +14,11 @@ const page =async() => {
         <Agent 
         userName={user?.name || ''} 
         userId={user?.id}
-        profileImage={user?.profileURL} 
+        useAvatar={user?.photoURL}
         type="generate" 
         />
     </>
-  )
-}
+  );
+};
 
-export default page
+export default page;

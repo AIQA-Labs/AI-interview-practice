@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Mona_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import StyledComponentsRegistry from "@/components/StyledComponentsRegistry";
 
 const monaSans = Mona_Sans({
   variable: "--font-mona-sans",
@@ -9,8 +10,9 @@ const monaSans = Mona_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AIQA",
-  description: "An AI powered platform for preparing for mock interviews.",
+  title: "AIQA: AI-Powered Real-Time Interview Platform for Smarter Hiring",
+  description:
+    "AIQA is an intelligent voice-driven interview platform that helps companies assess candidates in real time using conversational AI",
 };
 
 export default function RootLayout({
@@ -20,12 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-        className={`${monaSans.className} antialiased pattern`}
-      >
-        {children}
+      <body className={`${monaSans.className} antialiased pattern`}>
+        <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
 
-        <Toaster  />
+        <Toaster />
       </body>
     </html>
   );

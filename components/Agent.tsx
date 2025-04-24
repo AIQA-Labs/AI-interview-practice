@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
@@ -28,12 +29,17 @@ const Agent = ({
   feedbackId,
   type,
   questions,
+  userAvatar,
 }: AgentProps) => {
   const router = useRouter();
   const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
   const [messages, setMessages] = useState<SavedMessage[]>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lastMessage, setLastMessage] = useState<string>("");
+
+  // Add question tracking
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const totalQuestions = questions?.length || 0;
 
   useEffect(() => {
     const onCallStart = () => {
@@ -48,6 +54,46 @@ const Agent = ({
       if (message.type === "transcript" && message.transcriptType === "final") {
         const newMessage = { role: message.role, content: message.transcript };
         setMessages((prev) => [...prev, newMessage]);
+
+        // Track question progress - only increment counter when AI asks a MAIN question
+        // We'll use a more sophisticated approach to identify main questions
+        if (
+          message.role === "assistant" &&
+          totalQuestions > 0 &&
+          currentQuestionIndex < totalQuestions
+        ) {
+          // Check if this message contains a question that matches one of our prepared questions
+          if (message.transcript.includes("?") && questions) {
+            // Try to match this message with one of our prepared questions
+            const isMainQuestion = questions.some((question) => {
+              // Create a simplified version of both texts for comparison (lowercase, no punctuation)
+              const simplifiedTranscript = message.transcript
+                .toLowerCase()
+                .replace(/[^\w\s]/g, "");
+              const simplifiedQuestion = question
+                .toLowerCase()
+                .replace(/[^\w\s]/g, "");
+
+              // Check if the transcript contains a significant portion of the question
+              // This helps match even if the AI rephrases slightly
+              return simplifiedTranscript.includes(
+                simplifiedQuestion.substring(
+                  0,
+                  Math.min(30, simplifiedQuestion.length)
+                )
+              );
+            });
+
+            if (isMainQuestion) {
+              setCurrentQuestionIndex((prev) => prev + 1);
+              console.log(
+                `Question ${
+                  currentQuestionIndex + 1
+                }/${totalQuestions} asked (matched with prepared question)`
+              );
+            }
+          }
+        }
       }
     };
 
@@ -63,6 +109,20 @@ const Agent = ({
 
     const onError = (error: Error) => {
       console.log("Error:", error);
+
+      // More robust error handling for meeting ended errors
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        // Check various possible error message formats
+        ((error.message && error.message.includes("Meeting has ended")) ||
+          error.toString().includes("Meeting has ended") ||
+          JSON.stringify(error).includes("Meeting has ended"))
+      ) {
+        console.log("Detected meeting end, transitioning to FINISHED state");
+        setCallStatus(CallStatus.END);
+        vapi.stop(); // Ensure VAPI is properly stopped
+      }
     };
 
     vapi.on("call-start", onCallStart);
@@ -80,7 +140,7 @@ const Agent = ({
       vapi.off("speech-end", onSpeechEnd);
       vapi.off("error", onError);
     };
-  }, []);
+  }, [currentQuestionIndex, totalQuestions, questions]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -90,7 +150,7 @@ const Agent = ({
     const handleGenerateFeedback = async (messages: SavedMessage[]) => {
       console.log("handleGenerateFeedback");
 
-      const { success, feedback: id } = await createFeedback({
+      const { success, feedbackId: id } = await createFeedback({
         interviewId: interviewId!,
         userId: userId!,
         transcript: messages,
@@ -107,6 +167,10 @@ const Agent = ({
 
     if (callStatus === CallStatus.END) {
       if (type === "generate") {
+        toast.success("Interview generated successfully!", {
+          duration: 3000,
+          id: "generate-toast",
+        });
         router.push("/");
       } else {
         handleGenerateFeedback(messages);
@@ -140,10 +204,10 @@ const Agent = ({
     }
   };
 
-  const handleDisconnect = () => {
-    setCallStatus(CallStatus.END);
+  function handleDisconnect(): void {
     vapi.stop();
-  };
+    setCallStatus(CallStatus.END);
+  }
 
   return (
     <>
@@ -152,10 +216,10 @@ const Agent = ({
         <div className="card-interviewer">
           <div className="avatar">
             <Image
-              src="/ai-avatar.png"
+              src="/logo_2.png"
               alt="profile-image"
-              width={65}
-              height={54}
+              width={110}
+              height={124}
               className="object-cover"
             />
             {isSpeaking && <span className="animate-speak" />}
@@ -167,7 +231,7 @@ const Agent = ({
         <div className="card-border">
           <div className="card-content">
             <Image
-              src="/user-avatar.png"
+              src={userAvatar || "/user-avatar.png"}
               alt="profile-image"
               width={539}
               height={539}
@@ -207,7 +271,7 @@ const Agent = ({
             <span className="relative">
               {callStatus === "INACTIVE" || callStatus === "END"
                 ? "Call"
-                : ". . ."}
+                : ". . .Calling"}
             </span>
           </button>
         ) : (

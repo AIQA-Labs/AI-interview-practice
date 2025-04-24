@@ -17,9 +17,11 @@ function initFirebaseAdmin() {
     });
   }
 
+  const auth = getAuth();
+  const db = getFirestore();
+
   return {
-    auth: getAuth(),
-    db: getFirestore(),
+    auth, db
   };
 }
 

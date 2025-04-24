@@ -15,6 +15,8 @@ const InterviewCard = async ({
   type,
   techstack,
   createdAt,
+
+  
 }: InterviewCardProps) => {
   const feedback =
     userId && id
