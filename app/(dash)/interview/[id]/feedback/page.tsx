@@ -2,15 +2,13 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import CopyButton from "@/components/CopyButton";
-import { cn } from "@/lib/utils";
 
 import {
   getFeedbackByInterviewId,
   getInterviewById,
 } from "@/lib/actions/general.action";
-import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/actions/auth.action";
+import { Button } from "@/components/ui/button";
 
 const Feedback = async ({ params }: RouteParams) => {
   const { id } = await params;
@@ -25,22 +23,22 @@ const Feedback = async ({ params }: RouteParams) => {
   });
 
   return (
-    <section className="section-feedback">
+    <section className="section-feedback bg-stone-900/50 px-4 lg:px-8 py-3 lg:py-8 rounded-3xl">
       <div className="flex flex-row justify-center">
         <h1 className="text-4xl font-semibold">
-          Feedback on the Interview -{" "}
-          <span className="capitalize">{interview.role}</span> Interview
+          Feedback: <span className="capitalize">{interview.role}</span>{" "}
+          interview
         </h1>
       </div>
 
-      <div className="flex flex-row justify-center ">
-        <div className="flex flex-row gap-5">
+      <div className="flex flex-row justify-center">
+        <div className="flex flex-row gap-5 max-sm:flex-col max-sm:items-center">
           {/* Overall Impression */}
           <div className="flex flex-row gap-2 items-center">
             <Image src="/star.svg" width={22} height={22} alt="star" />
             <p>
               Overall Impression:{" "}
-              <span className="text-primary-200 font-bold">
+              <span className="text-blue-300 font-bold">
                 {feedback?.totalScore}
               </span>
               /100
@@ -52,23 +50,21 @@ const Feedback = async ({ params }: RouteParams) => {
             <Image src="/calendar.svg" width={22} height={22} alt="calendar" />
             <p>
               {feedback?.createdAt
-                ? dayjs(feedback.createdAt).format("MMM D, YYYY h:mm A")
+                ? dayjs(feedback.createdAt).format("MMM D, YYYY HH:mm")
                 : "N/A"}
             </p>
           </div>
         </div>
       </div>
 
-      <hr />
-
       <p>{feedback?.finalAssessment}</p>
 
       {/* Interview Breakdown */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <h2>Breakdown of the Interview:</h2>
         {feedback?.categoryScores?.map((category, index) => (
-          <div key={index}>
-            <p className="font-bold">
+          <div key={index} className="md:ml-4">
+            <p className="text-primary-200 font-bold">
               {index + 1}. {category.name} ({category.score}/100)
             </p>
             <p>{category.comment}</p>
@@ -77,8 +73,8 @@ const Feedback = async ({ params }: RouteParams) => {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h3>Strengths</h3>
-        <ul>
+        <h3>Strengths:</h3>
+        <ul className="md:ml-6">
           {feedback?.strengths?.map((strength, index) => (
             <li key={index}>{strength}</li>
           ))}
@@ -86,48 +82,25 @@ const Feedback = async ({ params }: RouteParams) => {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h3>Areas for Improvement</h3>
-        <ul>
+        <h3>Areas for Improvement:</h3>
+        <ul className="md:ml-6">
           {feedback?.areasForImprovement?.map((area, index) => (
             <li key={index}>{area}</li>
           ))}
         </ul>
       </div>
 
-      <div className="buttons">
-        <Button className="btn-secondary flex-1">
-          <Link href="/" className="flex w-full justify-center">
-            <p className="text-sm font-semibold text-primary-200 text-center">
-              Back to dashboard
-            </p>
-          </Link>
-        </Button>
-
-        <Button className="btn-primary flex-1">
-          <Link
-            href={`/interview/${id}`}
-            className="flex w-full justify-center"
-          >
-            <p className="text-sm font-semibold text-black text-center">
-              Retake Interview
-            </p>
-          </Link>
-        </Button>
-        
-        {/* Copy Feedback Button */}
-        <div className="flex-1 max-w-[200px]">
-          <CopyButton
-            text={`Feedback for ${interview.role} Interview:\n\n${
-              feedback?.finalAssessment || ""
-            }\n\nStrengths:\n${
-              feedback?.strengths?.join("\n") || ""
-            }\n\nAreas for Improvement:\n${
-              feedback?.areasForImprovement?.join("\n") || ""
-            }`}
-            className={cn("w-full btn-secondary")}
-            label="Copy Feedback"
-          />
-        </div>
+      <div className="buttons mt-4">
+        <Link href="/">
+          <Button className="text-md px-8" variant="default">
+            Back to dashboard
+          </Button>
+        </Link>
+        <Link href={`/interview/${id}`}>
+          <Button className="text-md px-8" variant="secondary">
+            Retake Interview
+          </Button>
+        </Link>
       </div>
     </section>
   );

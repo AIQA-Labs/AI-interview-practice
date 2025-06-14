@@ -7,7 +7,7 @@ export const features = [
   {
     title: "Real-Time Voice Integration",
     description:
-      "No forms. No typing. Just speak  everything works seamlessly with your voice.",
+      "No forms. No typing. Just speak. Everything works seamlessly with your voice.",
   },
   {
     title: "Resume Analysis",

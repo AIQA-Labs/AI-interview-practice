@@ -80,10 +80,10 @@ const page = async () => {
         </div>
       </section>
 
-      <section className="flex flex-col gap-6 mt-8">
-        <h2>Your Interviews</h2>
+      <section className="flex flex-col gap-6 z-10 sm:gap-6 mt-6 px-6 sm:px-12">
+        <h2 className="w-full z-10 px-4">Your Interviews</h2>
 
-        <div className="interviews-section">
+        <div className="z-10 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {userInterviews && userInterviews.length > 0 ? (
             userInterviews.map((interview) => (
               <InterviewCard
@@ -97,52 +97,56 @@ const page = async () => {
               />
             ))
           ) : (
-            <p>You haven&apos;t taken any interviews yet</p>
+            <p className="w-full z-10 px-4">
+              {" "}
+              You haven&apos;t taken any interviews yet
+            </p>
           )}
         </div>
       </section>
 
-      <section className="flex flex-col gap-6 mt-8">
-        <h2>
+      <section className="flex flex-col gap-6 z-10 sm:gap-6 mt-6 px-6 sm:px-12">
+        <h2 className="w-full z-10 px-4">
           All Interviews{" "}
           {allInterview && allInterview.length > 0 && (
             <span className="text-primary-200">({allInterview.length})</span>
           )}
         </h2>
+        <div className="w-full z-10 px-4">
+          {allInterview && allInterview.length > 0 ? (
+            <AllInterviewsList
+              renderedCards={await Promise.all(
+                allInterview.map(async (interview) => {
+                  const interviewCard = (
+                    <InterviewCard
+                      key={interview.id}
+                      userId={user?.id}
+                      interviewId={interview.id}
+                      role={interview.role}
+                      type={interview.type}
+                      techstack={interview.techstack}
+                      createdAt={interview.createdAt}
+                      coverImage={interview.coverImage}
+                      level={interview.level}
+                      questions={interview.questions}
+                    />
+                  );
 
-        {allInterview && allInterview.length > 0 ? (
-          <AllInterviewsList
-            renderedCards={await Promise.all(
-              allInterview.map(async (interview) => {
-                const interviewCard = (
-                  <InterviewCard
-                    key={interview.id}
-                    userId={user?.id}
-                    interviewId={interview.id}
-                    role={interview.role}
-                    type={interview.type}
-                    techstack={interview.techstack}
-                    createdAt={interview.createdAt}
-                    coverImage={interview.coverImage}
-                    level={interview.level}
-                    questions={interview.questions}
-                  />
-                );
-
-                return (
-                  <ClientInterviewCard
-                    key={interview.id}
-                    interview={interview}
-                    userId={user?.id}
-                    interviewCard={interviewCard}
-                  />
-                );
-              })
-            )}
-          />
-        ) : (
-          <p>There are no interviews available</p>
-        )}
+                  return (
+                    <ClientInterviewCard
+                      key={interview.id}
+                      interview={interview}
+                      userId={user?.id}
+                      interviewCard={interviewCard}
+                    />
+                  );
+                })
+              )}
+            />
+          ) : (
+            <p>There are no interviews available</p>
+          )}
+        </div>
       </section>
 
       <Footer />

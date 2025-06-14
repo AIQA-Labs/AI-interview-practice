@@ -9,10 +9,10 @@ const Testimonials = () => {
   return (
     <section id="testimonials" className="py-3">
       <h1 className="heading">
-        Kind words from
+        Kind Words From
         <span className=" from-[#DDDFFF] text-transparent bg-clip-text bg-gradient-to-r to-[#8564be]">
           {" "}
-          satisfied Users
+          Satisfied Users
         </span>
       </h1>
 

@@ -46,8 +46,14 @@ const Agent = ({
       setCallStatus(CallStatus.ACTIVE);
     };
 
-    const onCallEnd = () => {
-      setCallStatus(CallStatus.END);
+    const onCallEnd = async () => {
+      try {
+        // Wait for final messages to flush
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setCallStatus(CallStatus.END);
+      } catch (error) {
+        console.error("Error handling call end:", error);
+      }
     };
 
     const onMessage = (message: Message) => {
@@ -167,11 +173,15 @@ const Agent = ({
 
     if (callStatus === CallStatus.END) {
       if (type === "generate") {
-        toast.success("Interview generated successfully!", {
+        toast.success("Interview saved - Redirecting to dashboard...", {
           duration: 3000,
           id: "generate-toast",
         });
-        router.push("/");
+        // Wait for Firestore persistence and refresh dashboard
+        setTimeout(() => {
+          router.refresh();
+          router.push("/dashboard");
+        }, 2500);
       } else {
         handleGenerateFeedback(messages);
       }
@@ -211,16 +221,17 @@ const Agent = ({
 
   return (
     <>
-      <div className="call-view">
+      {/* Add margin-bottom to the cards for space below */}
+      <div className="call-view flex gap-x-10 mb-10 px-4">
         {/* AI Interviewer Card */}
         <div className="card-interviewer">
           <div className="avatar">
             <Image
               src="/logo_2.png"
               alt="profile-image"
-              width={110}
-              height={124}
-              className="object-cover"
+              width={114}
+              height={65}
+              className="object-cover rounded-full"
             />
             {isSpeaking && <span className="animate-speak" />}
           </div>
@@ -258,7 +269,8 @@ const Agent = ({
         </div>
       )}
 
-      <div className="w-full flex justify-center">
+      {/* Add margin-top to the button for space above */}
+      <div className="flex justify-center mt-10">
         {callStatus !== "ACTIVE" ? (
           <button className="relative btn-call" onClick={() => handleCall()}>
             <span
@@ -267,7 +279,6 @@ const Agent = ({
                 callStatus !== "CONNECTING" && "hidden"
               )}
             />
-
             <span className="relative">
               {callStatus === "INACTIVE" || callStatus === "END"
                 ? "Call"
