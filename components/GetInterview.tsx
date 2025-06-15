@@ -110,6 +110,12 @@ const GetInterview = ({
           username: userName,
           userid: userId,
         },
+        metadata: {
+          user: {
+            name: userName,
+            id: userId,
+          },
+        },
       });
     } else {
       let formattedQuestions = "";
@@ -143,11 +149,11 @@ const GetInterview = ({
         <div className="card-interviewer">
           <div className="avatar size-[130px]">
             <Image
-              src="/public/robot.png"
-              alt="AI Interviewer"
-              width={123}
-              height={65}
-              className="object-cover rounded-full"
+              src="/avatars/interviewer-default.png"
+              alt="Interviewer"
+              width={128}
+              height={128}
+              className="object-cover rounded-full w-full h-full"
             />
             {isSpeaking && <span className="animate-speak" />}
           </div>
@@ -169,10 +175,10 @@ const GetInterview = ({
       </div>
 
       {messages.length > 0 && (
-        <div className="bg-dark-700 rounded-lg p-4 mx-auto max-w-2xl">
+        <div className="bg-dark-600 rounded-lg p-4 mx-4">
           <div className="flex items-center gap-2 mb-2 text-primary-500">
             <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium">Live Transcript</span>
+            <span className="text-sm font-medium">Live transcript</span>
           </div>
           <p
             key={latestMessage}
@@ -187,8 +193,10 @@ const GetInterview = ({
         {callStatus !== "ACTIVE" ? (
           <button
             className={cn(
-              "relative px-6 py-3 rounded-full bg-primary-500 hover:bg-primary-600 text-dark-900 transition-colors",
-              callStatus === "CONNECTING" && "opacity-75 cursor-not-allowed"
+              "relative px-6 py-3 rounded-full font-medium",
+              "bg-primary-500 hover:bg-primary-600 text-dark-900",
+              "transition-colors duration-200",
+              callStatus === "CONNECTING" && "opacity-75 cursor-wait"
             )}
             onClick={handleCall}
             disabled={callStatus === "CONNECTING"}
