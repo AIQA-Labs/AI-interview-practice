@@ -213,7 +213,6 @@ const Agent = ({
       });
     }
   };
-
   function handleDisconnect(): void {
     vapi.stop();
     setCallStatus(CallStatus.END);
